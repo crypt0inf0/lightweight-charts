@@ -1,0 +1,310 @@
+/* MAIN CONTAINER */
+.tv-floating-toolbar {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    /* Compact padding */
+    gap: 4px;
+    /* Tight gap between items */
+    background: #ffffff;
+    border-radius: 8px;
+    /* Slightly rounded corners like the image */
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.1),
+        0 8px 24px rgba(0, 0, 0, 0.12);
+    /* Soft, elevated shadow */
+    height: 50px;
+    /* Compact height */
+    position: absolute;
+    z-index: 100;
+    user-select: none;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.tv-floating-toolbar.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px) scale(0.98);
+}
+
+/* WRAPPER for items with dropdowns */
+.tool-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+/* DRAG HANDLE */
+.tv-floating-toolbar .drag-handle {
+    width: 24px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #B2B5BE;
+    cursor: grab;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+.tv-floating-toolbar .drag-handle:active {
+    cursor: grabbing;
+}
+
+.tv-floating-toolbar .drag-handle svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    /* Dots usually fill */
+}
+
+/* STANDARD TOOL BUTTONS */
+.tv-floating-toolbar .tool-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: #131722;
+    /* Dark text color */
+    position: relative;
+    padding: 0;
+}
+
+.tv-floating-toolbar .tool-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.tv-floating-toolbar .tool-btn.active {
+    color: var(--active-color, #2962ff);
+}
+
+/* Active Indicator (Underline style from image 1) */
+.tv-floating-toolbar .tool-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 6px;
+    right: 6px;
+    height: 3px;
+    background-color: currentColor;
+    border-radius: 2px;
+}
+
+.tv-floating-toolbar .tool-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.5;
+    /* Thin strokes */
+    stroke: currentColor;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+/* DIVIDER */
+.tv-floating-toolbar .divider {
+    width: 1px;
+    height: 24px;
+    background: #E0E3EB;
+    margin: 0 8px;
+    flex-shrink: 0;
+}
+
+/* STROKE WIDTH CONTROL (Compact "— 2px") */
+.tv-floating-toolbar .stroke-width-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px;
+    height: 36px;
+    cursor: pointer;
+    border-radius: 6px;
+    color: #131722;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.tv-floating-toolbar .stroke-width-trigger:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.tv-floating-toolbar .stroke-width-preview {
+    width: 20px;
+    background: #131722;
+    border-radius: 1px;
+}
+
+/* DROPDOWN MENU */
+.tv-floating-toolbar__dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-5px);
+    background: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    padding: 6px;
+    display: block;
+    z-index: 101;
+    opacity: 0;
+    pointer-events: none;
+    min-width: 120px;
+    transition: opacity 0.15s, transform 0.15s;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tv-floating-toolbar__dropdown.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+/* DROPDOWN ITEMS */
+.tv-width-picker__item,
+.tv-template-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    gap: 10px;
+    font-size: 13px;
+    color: #131722;
+    transition: background-color 0.1s;
+}
+
+.tv-width-picker__item:hover,
+.tv-template-item:hover {
+    background-color: #F0F3FA;
+}
+
+.tv-width-picker__item.active {
+    background-color: #E6F0FF;
+    color: #2962ff;
+}
+
+.tv-template-item {
+    justify-content: space-between;
+}
+
+/* COLOR PICKER GRID */
+.tv-color-picker__grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+    padding: 4px;
+}
+
+.tv-floating-toolbar__dropdown:has(.tv-color-picker__grid) {
+    min-width: 232px;
+    /* 8 cols * 24px + gaps */
+    padding: 8px;
+}
+
+.tv-color-picker__swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tv-color-picker__swatch:hover {
+    transform: scale(1.1);
+    z-index: 1;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.tv-color-picker__swatch.active {
+    border: 1px solid #000;
+}
+
+.tv-dropdown-separator {
+    height: 1px;
+    background: #E0E3EB;
+    margin: 6px 0;
+}
+
+/* Custom Color Button */
+.tv-color-picker__custom-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #131722;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin: 0 auto 8px auto;
+}
+
+.tv-color-picker__input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+/* OPACITY SLIDER */
+.tv-opacity-slider {
+    padding: 0 4px;
+}
+
+.tv-opacity-slider__label {
+    font-size: 11px;
+    color: #787B86;
+    margin-bottom: 4px;
+}
+
+.tv-opacity-slider__controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tv-opacity-slider__track {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: #E0E3EB;
+    position: relative;
+    cursor: pointer;
+}
+
+.tv-opacity-slider__thumb {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 1px solid #B2B5BE;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    /* Let clicks pass to track */
+}
+
+.tv-opacity-slider__value {
+    font-size: 12px;
+    color: #131722;
+    min-width: 30px;
+    text-align: right;
+}

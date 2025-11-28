@@ -16,6 +16,11 @@
 		"declaration": true,
 		"declarationDir": "typings",
 		"emitDeclarationOnly": true,
+		"baseUrl": ".",
+		"paths": {
+			"lightweight-charts": ["../dist/typings.d.ts", "../dist"],
+			"lightweight-charts/*": ["../dist/*", "../src/*"]
+		},
 		"typeRoots": [
 			"./node_modules/@types"
 		]
