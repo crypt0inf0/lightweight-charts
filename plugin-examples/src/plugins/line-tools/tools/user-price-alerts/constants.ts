@@ -8,7 +8,7 @@ export const iconPaddingAlertTop = 2;
 export const clockIconViewBoxSize = 13; // Width
 export const iconSize = 13;
 
-export const showCentreLabelDistance = 50;
+export const showCentreLabelDistance = 5;
 export const averageWidthPerCharacter = 5.81; // doesn't need to be exact, just roughly correct. 12px sans-serif
 export const removeButtonWidth = 26;
 export const centreLabelHeight = 20;

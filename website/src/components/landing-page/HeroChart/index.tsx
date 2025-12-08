@@ -1,4 +1,5 @@
 import { useColorMode } from '@docusaurus/theme-common';
+// @ts-expect-error -- module import resolved at runtime
 import {
 	AreaSeries,
 	createChart,
@@ -9,8 +10,10 @@ import {
 	type LayoutOptions,
 	type LineData,
 	type Time,
-} from 'lightweight-charts-local';
+} from 'lightweight-charts';
 import React from 'react';
+
+/* eslint-disable @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-redundant-type-constituents -- types from dynamic import */
 
 import CodeBlock, { CodeBlockProps } from '../Codeblock';
 import data from './hero-chart-data.json';

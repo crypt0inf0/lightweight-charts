@@ -1,17 +1,20 @@
 import { Delegate } from '../../../../helpers/delegate';
+import { LineTool, AlertCondition } from '../line-tool-alert-manager';
 
 export interface UserAlertInfo {
 	id: string;
 	price: number;
-	condition?: 'crossing' | 'crossing_up' | 'crossing_down';
+	condition?: AlertCondition;
+	type?: 'price' | 'tool';
+	toolRef?: LineTool;
 }
 
 export class UserAlertsState {
-	private _alertAdded: Delegate<UserAlertInfo> = new Delegate();
-	private _alertRemoved: Delegate<string> = new Delegate();
-	private _alertChanged: Delegate<UserAlertInfo> = new Delegate();
-	private _alertsChanged: Delegate = new Delegate();
-	private _alerts: Map<string, UserAlertInfo>;
+	protected _alertAdded: Delegate<UserAlertInfo> = new Delegate();
+	protected _alertRemoved: Delegate<string> = new Delegate();
+	protected _alertChanged: Delegate<UserAlertInfo> = new Delegate();
+	protected _alertsChanged: Delegate = new Delegate();
+	protected _alerts: Map<string, UserAlertInfo>;
 
 	constructor() {
 		this._alerts = new Map();
@@ -45,7 +48,7 @@ export class UserAlertsState {
 		return this.addAlertWithCondition(price, 'crossing');
 	}
 
-	addAlertWithCondition(price: number, condition: 'crossing' | 'crossing_up' | 'crossing_down'): string {
+	addAlertWithCondition(price: number, condition: AlertCondition): string {
 		const id = this._getNewId();
 		const userAlert: UserAlertInfo = {
 			price,
@@ -73,7 +76,7 @@ export class UserAlertsState {
 		this._alertsChanged.fire();
 	}
 
-	updateAlert(id: string, newPrice: number, condition: 'crossing' | 'crossing_up' | 'crossing_down') {
+	updateAlert(id: string, newPrice: number, condition: AlertCondition) {
 		const alert = this._alerts.get(id);
 		if (!alert) return;
 		alert.price = newPrice;
@@ -93,7 +96,7 @@ export class UserAlertsState {
 		});
 	}
 
-	private _getNewId(): string {
+	protected _getNewId(): string {
 		let id = Math.round(Math.random() * 1000000).toString(16);
 		while (this._alerts.has(id)) {
 			id = Math.round(Math.random() * 1000000).toString(16);

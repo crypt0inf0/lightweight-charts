@@ -111,6 +111,7 @@ export interface VerticalLineOptions {
     showLabel: boolean;
     labelBackgroundColor: string;
     labelTextColor: string;
+    locked?: boolean;
 }
 
 const defaultOptions: VerticalLineOptions = {
@@ -120,6 +121,7 @@ const defaultOptions: VerticalLineOptions = {
     showLabel: false, // Default to false since we don't have time text
     labelBackgroundColor: 'rgba(255, 255, 255, 0.85)',
     labelTextColor: 'rgb(0, 0, 0)',
+    locked: false,
 };
 
 export class VerticalLine implements ISeriesPrimitive<Time> {
@@ -129,6 +131,7 @@ export class VerticalLine implements ISeriesPrimitive<Time> {
     private readonly _paneViews: VerticalLinePaneView[];
     _options: VerticalLineOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,

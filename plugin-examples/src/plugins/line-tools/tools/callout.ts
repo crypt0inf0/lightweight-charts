@@ -66,19 +66,34 @@ class CalloutPaneRenderer implements IPrimitivePaneRenderer {
             ctx.arc(x1, y1, 3, 0, 2 * Math.PI);
             ctx.fill();
 
-            // Draw text box at p2
+            // Draw text box at p2 with rounded corners
             ctx.font = `${this._options.fontSize}px ${this._options.fontFamily}`;
             const textMetrics = ctx.measureText(this._text);
             const textWidth = textMetrics.width;
             const textHeight = this._options.fontSize * 1.2;
-            const padding = 5;
+            const padding = 8;
+            const borderRadius = 6;
 
             const boxX = x2;
             const boxY = y2 - textHeight / 2;
+            const boxWidth = textWidth + padding * 2;
+            const boxHeight = textHeight + padding * 2;
 
+            // Draw rounded rectangle for background
             ctx.fillStyle = this._options.backgroundColor;
-            ctx.fillRect(boxX, boxY - padding, textWidth + padding * 2, textHeight + padding * 2);
-            ctx.strokeRect(boxX, boxY - padding, textWidth + padding * 2, textHeight + padding * 2);
+            ctx.beginPath();
+            ctx.moveTo(boxX + borderRadius, boxY - padding);
+            ctx.lineTo(boxX + boxWidth - borderRadius, boxY - padding);
+            ctx.arcTo(boxX + boxWidth, boxY - padding, boxX + boxWidth, boxY - padding + borderRadius, borderRadius);
+            ctx.lineTo(boxX + boxWidth, boxY - padding + boxHeight - borderRadius);
+            ctx.arcTo(boxX + boxWidth, boxY - padding + boxHeight, boxX + boxWidth - borderRadius, boxY - padding + boxHeight, borderRadius);
+            ctx.lineTo(boxX + borderRadius, boxY - padding + boxHeight);
+            ctx.arcTo(boxX, boxY - padding + boxHeight, boxX, boxY - padding + boxHeight - borderRadius, borderRadius);
+            ctx.lineTo(boxX, boxY - padding + borderRadius);
+            ctx.arcTo(boxX, boxY - padding, boxX + borderRadius, boxY - padding, borderRadius);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
 
             ctx.fillStyle = this._options.textColor;
             ctx.textBaseline = 'middle';
@@ -166,6 +181,7 @@ export class Callout implements ISeriesPrimitive<Time> {
     private readonly _paneViews: CalloutPaneView[];
     readonly _options: CalloutOptions;
     _selected: boolean = false;
+    _onTextEdit: ((newText: string) => void) | null = null;
 
     constructor(
         chart: IChartApi,
@@ -214,6 +230,22 @@ export class Callout implements ISeriesPrimitive<Time> {
     public updateText(text: string): void {
         this._text = text;
         this.updateAllViews();
+    }
+
+    /**
+     * Set callback for text editing
+     */
+    public setOnTextEdit(callback: (newText: string) => void): void {
+        this._onTextEdit = callback;
+    }
+
+    /**
+     * Trigger text edit dialog
+     */
+    public editText(): void {
+        if (this._onTextEdit) {
+            this._onTextEdit(this._text);
+        }
     }
 
     /**

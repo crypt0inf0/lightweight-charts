@@ -151,6 +151,7 @@ export interface ShortPositionOptions {
     lineWidth: number;
     zoneOpacity: number;
     textColor: string;
+    locked?: boolean;
 }
 
 const defaultOptions: ShortPositionOptions = {
@@ -162,6 +163,7 @@ const defaultOptions: ShortPositionOptions = {
     lineWidth: 1,
     zoneOpacity: 0.2,
     textColor: '#FFFFFF',
+    locked: false,
 };
 
 export class ShortPosition implements ISeriesPrimitive<Time> {
@@ -173,6 +175,7 @@ export class ShortPosition implements ISeriesPrimitive<Time> {
     private readonly _paneViews: ShortPositionPaneView[];
     readonly _options: ShortPositionOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,

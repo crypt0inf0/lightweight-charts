@@ -154,6 +154,7 @@ export interface TrendLineOptions {
 	extendRight?: boolean;
 	leftEnd?: number; // 0: Normal, 1: Arrow
 	rightEnd?: number; // 0: Normal, 1: Arrow
+	locked?: boolean;
 }
 
 const defaultOptions: TrendLineOptions = {
@@ -164,6 +165,7 @@ const defaultOptions: TrendLineOptions = {
 	extendRight: false,
 	leftEnd: 0,
 	rightEnd: 0,
+	locked: false,
 };
 
 export class TrendLine implements ISeriesPrimitive<Time> {
@@ -174,6 +176,8 @@ export class TrendLine implements ISeriesPrimitive<Time> {
 	private readonly _paneViews: TrendLinePaneView[];
 	_options: TrendLineOptions;
 	_selected: boolean = false;
+	_locked: boolean = false;
+	_alertId?: string;
 
 	constructor(
 		chart: IChartApi,
@@ -215,6 +219,30 @@ export class TrendLine implements ISeriesPrimitive<Time> {
 		}
 		this.updateAllViews();
 	}
+
+	public setAlertId(id: string | undefined): void {
+		this._alertId = id;
+	}
+
+	public getPriceAtLogical(logical: number): number | null {
+		// Basic linear interpolation
+		if (this._p1.logical === null || this._p1.price === null ||
+			this._p2.logical === null || this._p2.price === null) {
+			return null;
+		}
+
+		if (this._p1.logical === this._p2.logical) return null; // Vertical line
+
+		const m = (this._p2.price - this._p1.price) / (this._p2.logical - this._p1.logical);
+		const price = this._p1.price + m * (logical - this._p1.logical);
+
+		// Check extensions
+		if (!this._options.extendLeft && logical < Math.min(this._p1.logical, this._p2.logical)) return null;
+		if (!this._options.extendRight && logical > Math.max(this._p1.logical, this._p2.logical)) return null;
+
+		return price;
+	}
+
 	public setSelected(selected: boolean): void {
 		this._selected = selected;
 		this.updateAllViews();

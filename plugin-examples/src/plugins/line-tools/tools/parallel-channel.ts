@@ -190,6 +190,7 @@ export interface ParallelChannelOptions {
     width: number;
     lineStyle: number;
     showMiddle: boolean;
+    locked?: boolean;
 }
 
 const defaultOptions: ParallelChannelOptions = {
@@ -198,6 +199,7 @@ const defaultOptions: ParallelChannelOptions = {
     width: 1,
     lineStyle: 0,
     showMiddle: true,
+    locked: false,
 };
 
 export class ParallelChannel implements ISeriesPrimitive<Time> {
@@ -209,6 +211,7 @@ export class ParallelChannel implements ISeriesPrimitive<Time> {
     private readonly _paneViews: ParallelChannelPaneView[];
     readonly _options: ParallelChannelOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,

@@ -120,6 +120,7 @@ export interface CircleOptions {
     width: number;
     backgroundColor: string;
     lineStyle: number;
+    locked?: boolean;
 }
 
 const defaultOptions: CircleOptions = {
@@ -127,6 +128,7 @@ const defaultOptions: CircleOptions = {
     width: 2,
     backgroundColor: 'rgba(41, 98, 255, 0.2)',
     lineStyle: 0,
+    locked: false,
 };
 
 export class Circle implements ISeriesPrimitive<Time> {
@@ -137,6 +139,7 @@ export class Circle implements ISeriesPrimitive<Time> {
     private readonly _paneViews: CirclePaneView[];
     readonly _options: CircleOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,

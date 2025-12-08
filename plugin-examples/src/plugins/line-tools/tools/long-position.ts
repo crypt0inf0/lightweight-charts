@@ -164,6 +164,7 @@ export interface LongPositionOptions {
 	lineWidth: number;
 	zoneOpacity: number;
 	textColor: string;
+	locked?: boolean;
 }
 
 const defaultOptions: LongPositionOptions = {
@@ -175,6 +176,7 @@ const defaultOptions: LongPositionOptions = {
 	lineWidth: 1,
 	zoneOpacity: 0.2,
 	textColor: '#FFFFFF',
+	locked: false,
 };
 
 export class LongPosition implements ISeriesPrimitive<Time> {
@@ -186,6 +188,7 @@ export class LongPosition implements ISeriesPrimitive<Time> {
 	private readonly _paneViews: LongPositionPaneView[];
 	readonly _options: LongPositionOptions;
 	_selected: boolean = false;
+	_locked: boolean = false;
 
 	constructor(
 		chart: IChartApi,

@@ -1,19 +1,22 @@
+import { AlertCondition } from '../line-tool-alert-manager';
+
 export interface AlertNotificationData {
     alertId: string;
     symbol: string;
     price: string; // Formatted price string
     timestamp: number;
     direction: 'up' | 'down';
-    condition: 'crossing' | 'crossing_up' | 'crossing_down';
+    condition: AlertCondition;
     onEdit?: (data: AlertNotificationData) => void;
 }
 
 import { LineToolManager } from '../../line-tool-manager';
 
 export class AlertNotification {
-    private _container: HTMLElement;
+    private _container: HTMLElement | null;
     private _notifications: Map<string, HTMLElement> = new Map();
-    private _manager: LineToolManager;
+    private _manager: LineToolManager | null;
+    private _dismissTimeouts: Map<string, number> = new Map(); // RC-5
 
     constructor(manager: LineToolManager) {
         this._manager = manager;
@@ -147,6 +150,8 @@ export class AlertNotification {
     }
 
     public show(data: AlertNotificationData): void {
+        if (!this._container) return;
+        
         // Update position before showing
         this._updatePosition();
 
@@ -159,10 +164,12 @@ export class AlertNotification {
         this._container.appendChild(notification);
         this._notifications.set(data.alertId, notification);
 
-        // Auto-dismiss after 60 seconds
-        setTimeout(() => {
+        // Auto-dismiss after 60 seconds (RC-5)
+        const timeoutId = window.setTimeout(() => {
+            this._dismissTimeouts.delete(data.alertId);
             this.dismiss(data.alertId);
         }, 60000);
+        this._dismissTimeouts.set(data.alertId, timeoutId);
 
         this._playAlarm();
     }
@@ -196,7 +203,7 @@ export class AlertNotification {
             }
 
             oscillator.start(now);
-            oscillator.stop(now + 1);           // full alarm = 1 second
+            oscillator.stop(now + 3.1);         // full alarm = 3 seconds (10 pulses * 0.3s)
 
             oscillator.onended = () => ctx.close();  // cleanup
 
@@ -206,6 +213,8 @@ export class AlertNotification {
     }
 
     private _updatePosition(): void {
+        if (!this._container || !this._manager) return;
+        
         const chartRect = this._manager.getChartRect();
         if (chartRect) {
             // 30px from left, 15px from bottom (relative to chart)
@@ -227,6 +236,13 @@ export class AlertNotification {
     }
 
     public dismiss(alertId: string): void {
+        // Clear timeout if exists (RC-5)
+        const timeoutId = this._dismissTimeouts.get(alertId);
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            this._dismissTimeouts.delete(alertId);
+        }
+        
         const notification = this._notifications.get(alertId);
         if (notification) {
             notification.classList.add('dismissing');
@@ -240,12 +256,20 @@ export class AlertNotification {
     }
 
     public destroy(): void {
+        // Clear all timeouts
+        this._dismissTimeouts.forEach((timeoutId) => {
+            clearTimeout(timeoutId);
+        });
+        this._dismissTimeouts.clear();
+        
         this._notifications.forEach((_, alertId) => {
             this.dismiss(alertId);
         });
-        if (this._container.parentNode) {
+        if (this._container && this._container.parentNode) {
             this._container.parentNode.removeChild(this._container);
         }
+        this._container = null;
+        this._manager = null;
     }
 
     private _createContainer(): HTMLElement {
@@ -277,7 +301,16 @@ export class AlertNotification {
         // Message with crossing price
         const messageDiv = document.createElement('div');
         messageDiv.className = 'alert-notification-message';
-        messageDiv.textContent = `${data.symbol} Crossing ${data.price}`;
+        // Format message based on condition
+        let action = 'Crossing';
+        if (data.condition === 'crossing_up') action = 'Crossing Up';
+        else if (data.condition === 'crossing_down') action = 'Crossing Down';
+        else if (data.condition === 'entering') action = 'Entering';
+        else if (data.condition === 'exiting') action = 'Exiting';
+        else if (data.condition === 'inside') action = 'Inside';
+        else if (data.condition === 'outside') action = 'Outside';
+
+        messageDiv.textContent = `${data.symbol} ${action} ${data.price}`;
         contentDiv.appendChild(messageDiv);
 
         // Footer with edit link and timestamp

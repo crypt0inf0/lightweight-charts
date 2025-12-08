@@ -148,6 +148,24 @@ btnFibExtension.addEventListener('click', () => {
     setActiveButton(btnFibExtension);
 });
 
+const btnDatePriceRange = document.getElementById('btn-date-price-range') as HTMLButtonElement;
+btnDatePriceRange.addEventListener('click', () => {
+    manager.startTool('DatePriceRange');
+    setActiveButton(btnDatePriceRange);
+});
+
+const btnMeasure = document.getElementById('btn-measure') as HTMLButtonElement;
+btnMeasure.addEventListener('click', () => {
+    manager.startTool('Measure');
+    setActiveButton(btnMeasure);
+});
+
+const btnHeadAndShoulders = document.getElementById('btn-head-and-shoulders') as HTMLButtonElement;
+btnHeadAndShoulders.addEventListener('click', () => {
+    manager.startTool('HeadAndShoulders');
+    setActiveButton(btnHeadAndShoulders);
+});
+
 btnTriangle.addEventListener('click', () => {
     manager.startTool('Triangle');
     setActiveButton(btnTriangle);
@@ -195,6 +213,12 @@ btnUserPriceAlerts.addEventListener('click', () => {
     setActiveButton(btnUserPriceAlerts);
 });
 
+const btnPriceLabel = document.getElementById('btn-price-label') as HTMLButtonElement;
+btnPriceLabel.addEventListener('click', () => {
+    manager.startTool('PriceLabel');
+    setActiveButton(btnPriceLabel);
+});
+
 btnCrossLine.addEventListener('click', () => {
     manager.startTool('CrossLine');
     setActiveButton(btnCrossLine);
@@ -203,6 +227,12 @@ btnCrossLine.addEventListener('click', () => {
 btnCircle.addEventListener('click', () => {
     manager.startTool('Circle');
     setActiveButton(btnCircle);
+});
+
+const btnEraser = document.getElementById('btn-eraser') as HTMLButtonElement;
+btnEraser.addEventListener('click', () => {
+    manager.startTool('Eraser');
+    setActiveButton(btnEraser);
 });
 
 btnClear.addEventListener('click', () => {

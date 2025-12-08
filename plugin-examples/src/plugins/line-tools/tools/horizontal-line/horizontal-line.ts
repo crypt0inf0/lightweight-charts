@@ -80,12 +80,14 @@ export interface HorizontalLineOptions {
     lineColor: string;
     width: number;
     lineStyle: number;
+    locked?: boolean;
 }
 
 const defaultOptions: HorizontalLineOptions = {
     lineColor: '#2962FF',
     width: 2,
     lineStyle: 0,
+    locked: false,
 };
 
 export class HorizontalLine implements ISeriesPrimitive<Time> {
@@ -95,6 +97,7 @@ export class HorizontalLine implements ISeriesPrimitive<Time> {
     private readonly _paneViews: HorizontalLinePaneView[];
     readonly _options: HorizontalLineOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,
@@ -163,12 +166,7 @@ export class HorizontalLine implements ISeriesPrimitive<Time> {
     }
 
     autoscaleInfo(_startTimePoint: Logical, _endTimePoint: Logical): AutoscaleInfo | null {
-        return {
-            priceRange: {
-                minValue: this._price,
-                maxValue: this._price,
-            },
-        };
+        return null;
     }
 
     updateAllViews(): void {

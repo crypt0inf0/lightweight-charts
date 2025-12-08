@@ -121,6 +121,7 @@ export interface RectangleOptions {
     width: number;
     backgroundColor: string;
     lineStyle: number;
+    locked?: boolean;
 }
 
 const defaultOptions: RectangleOptions = {
@@ -128,6 +129,7 @@ const defaultOptions: RectangleOptions = {
     width: 2,
     backgroundColor: 'rgba(41, 98, 255, 0.2)',
     lineStyle: 0,
+    locked: false,
 };
 
 export class Rectangle implements ISeriesPrimitive<Time> {
@@ -138,6 +140,7 @@ export class Rectangle implements ISeriesPrimitive<Time> {
     private readonly _paneViews: RectanglePaneView[];
     readonly _options: RectangleOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,

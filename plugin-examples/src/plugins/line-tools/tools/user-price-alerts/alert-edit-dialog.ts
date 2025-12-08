@@ -1,14 +1,19 @@
+import { AlertCondition } from '../line-tool-alert-manager';
+
 export interface AlertEditData {
     alertId: string;
     price: number;
-    condition: 'crossing' | 'crossing_up' | 'crossing_down';
+    condition: AlertCondition;
     symbol: string;
+    isTrendline?: boolean;
+    toolType?: 'line' | 'shape' | 'vertical'; // Optional helper to filter options
 }
 
 export class AlertEditDialog {
     private _overlay: HTMLElement | null = null;
     private _onSave: ((data: AlertEditData) => void) | null = null;
     private _currentData: AlertEditData | null = null;
+    private _overlayClickHandler: ((e: MouseEvent) => void) | null = null; // B-9
 
     constructor() {
         this._injectStyles();
@@ -168,8 +173,14 @@ export class AlertEditDialog {
     }
 
     public hide(): void {
-        if (this._overlay && this._overlay.parentNode) {
-            this._overlay.parentNode.removeChild(this._overlay);
+        if (this._overlay) {
+            if (this._overlayClickHandler) {
+                this._overlay.removeEventListener('click', this._overlayClickHandler);
+                this._overlayClickHandler = null;
+            }
+            if (this._overlay.parentNode) {
+                this._overlay.parentNode.removeChild(this._overlay);
+            }
         }
         this._overlay = null;
         this._onSave = null;
@@ -180,12 +191,13 @@ export class AlertEditDialog {
         this._overlay = document.createElement('div');
         this._overlay.className = 'alert-edit-dialog-overlay';
 
-        // Close on click outside
-        this._overlay.addEventListener('click', (e) => {
+        // Close on click outside (B-9)
+        this._overlayClickHandler = (e: MouseEvent) => {
             if (e.target === this._overlay) {
                 this.hide();
             }
-        });
+        };
+        this._overlay.addEventListener('click', this._overlayClickHandler);
 
         const dialog = document.createElement('div');
         dialog.className = 'alert-edit-dialog';
@@ -223,11 +235,25 @@ export class AlertEditDialog {
         const conditionSelect = document.createElement('select');
         conditionSelect.className = 'alert-edit-select';
 
-        const options = [
+        const allOptions: { value: AlertCondition, label: string }[] = [
             { value: 'crossing', label: 'Crossing' },
             { value: 'crossing_up', label: 'Crossing Up' },
-            { value: 'crossing_down', label: 'Crossing Down' }
+            { value: 'crossing_down', label: 'Crossing Down' },
+            { value: 'entering', label: 'Entering' },
+            { value: 'exiting', label: 'Exiting' },
+            { value: 'inside', label: 'Inside' },
+            { value: 'outside', label: 'Outside' }
         ];
+
+        let options = allOptions;
+        if (this._currentData?.toolType === 'vertical') {
+            options = allOptions.filter(o => o.value === 'crossing');
+        } else if (this._currentData?.toolType === 'shape') {
+            options = allOptions.filter(o => ['entering', 'exiting', 'inside', 'outside'].includes(o.value));
+        } else {
+            // Default line tools
+            options = allOptions.filter(o => ['crossing', 'crossing_up', 'crossing_down'].includes(o.value));
+        }
 
         options.forEach(opt => {
             const option = document.createElement('option');
@@ -242,20 +268,23 @@ export class AlertEditDialog {
         content.appendChild(conditionGroup);
 
         // Price Input
-        const priceGroup = document.createElement('div');
-        priceGroup.className = 'alert-edit-form-group';
-        const priceLabel = document.createElement('label');
-        priceLabel.className = 'alert-edit-label';
-        priceLabel.textContent = 'Value';
-        priceGroup.appendChild(priceLabel);
+        let priceInput: HTMLInputElement | null = null;
+        if (!this._currentData?.isTrendline) {
+            const priceGroup = document.createElement('div');
+            priceGroup.className = 'alert-edit-form-group';
+            const priceLabel = document.createElement('label');
+            priceLabel.className = 'alert-edit-label';
+            priceLabel.textContent = 'Value';
+            priceGroup.appendChild(priceLabel);
 
-        const priceInput = document.createElement('input');
-        priceInput.className = 'alert-edit-input';
-        priceInput.type = 'number';
-        priceInput.step = '0.01';
-        priceInput.value = this._currentData?.price.toFixed(2) || '';
-        priceGroup.appendChild(priceInput);
-        content.appendChild(priceGroup);
+            priceInput = document.createElement('input');
+            priceInput.className = 'alert-edit-input';
+            priceInput.type = 'number';
+            priceInput.step = '0.01';
+            priceInput.value = this._currentData?.price.toFixed(2) || '';
+            priceGroup.appendChild(priceInput);
+            content.appendChild(priceGroup);
+        }
 
         dialog.appendChild(content);
 
@@ -277,7 +306,7 @@ export class AlertEditDialog {
                 this._onSave({
                     ...this._currentData,
                     condition: conditionSelect.value as any,
-                    price: parseFloat(priceInput.value)
+                    price: priceInput ? parseFloat(priceInput.value) : this._currentData.price
                 });
             }
             this.hide();

@@ -1,9 +1,16 @@
 /* eslint-disable @typescript-eslint/naming-convention -- allows using version numbers as keys (e.g. "3.8") */
+/* eslint-disable @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-argument -- dynamic imports resolved at runtime */
+// @ts-expect-error -- dynamic imports resolved at runtime
 export type LightweightChartsApi38 = typeof import('lightweight-charts-3.8');
+// @ts-expect-error -- dynamic imports resolved at runtime
 export type LightweightChartsApi40 = typeof import('lightweight-charts-4.0');
+// @ts-expect-error -- dynamic imports resolved at runtime
 export type LightweightChartsApi41 = typeof import('lightweight-charts-4.1');
+// @ts-expect-error -- dynamic imports resolved at runtime
 export type LightweightChartsApi42 = typeof import('lightweight-charts-4.2');
+// @ts-expect-error -- dynamic imports resolved at runtime
 export type LightweightChartsApi50 = typeof import('lightweight-charts-5.0');
+// @ts-expect-error -- dynamic imports resolved at runtime
 export type LightweightChartsApiCurrent = typeof import('../../../../..');
 
 export interface LightweightChartsApiTypeMap {
@@ -51,6 +58,7 @@ function addResizeHandler(window: Window, container: HTMLElement, resize: (width
 
 export const importLightweightChartsVersion: LightweightChartsApiGetters = {
 	3.8: async (window: Window) => {
+		// @ts-expect-error -- dynamic imports resolved at runtime
 		const module = await import('lightweight-charts-3.8');
 
 		const createChart: typeof module.createChart = (container: string | HTMLElement, options?: Parameters<typeof module.createChart>[1]) => {
@@ -62,6 +70,7 @@ export const importLightweightChartsVersion: LightweightChartsApiGetters = {
 		return { module, createChart, createChartEx: undefined, createYieldCurveChart: undefined, createOptionsChart: undefined };
 	},
 	'4.0': async (window: Window) => {
+		// @ts-expect-error -- dynamic imports resolved at runtime
 		const module = await import('lightweight-charts-4.0');
 
 		const createChart: typeof module.createChart = (container: string | HTMLElement, options?: Parameters<typeof module.createChart>[1]) => {
@@ -73,6 +82,7 @@ export const importLightweightChartsVersion: LightweightChartsApiGetters = {
 		return { module, createChart, createChartEx: undefined, createYieldCurveChart: undefined, createOptionsChart: undefined };
 	},
 	4.1: async (window: Window) => {
+		// @ts-expect-error -- dynamic imports resolved at runtime
 		const module = await import('lightweight-charts-4.1');
 
 		const createChart: typeof module.createChart = (container: string | HTMLElement, options?: Parameters<typeof module.createChart>[1]) => {
@@ -90,6 +100,7 @@ export const importLightweightChartsVersion: LightweightChartsApiGetters = {
 		return { module, createChart, createChartEx: createChartEx as typeof module.createChartEx, createYieldCurveChart: undefined, createOptionsChart: undefined };
 	},
 	4.2: async (window: Window) => {
+		// @ts-expect-error -- dynamic imports resolved at runtime
 		const module = await import('lightweight-charts-4.2');
 
 		const createChart: typeof module.createChart = (container: string | HTMLElement, options?: Parameters<typeof module.createChart>[1]) => {
@@ -107,6 +118,7 @@ export const importLightweightChartsVersion: LightweightChartsApiGetters = {
 		return { module, createChart, createChartEx: createChartEx as typeof module.createChartEx, createYieldCurveChart: undefined, createOptionsChart: undefined };
 	},
 	'5.0': async (window: Window) => {
+		// @ts-expect-error -- dynamic imports resolved at runtime
 		const module = await import('lightweight-charts-5.0');
 
 		const createChart: typeof module.createChart = (container: string | HTMLElement, options?: Parameters<typeof module.createChart>[1]) => {
@@ -142,6 +154,7 @@ export const importLightweightChartsVersion: LightweightChartsApiGetters = {
 		};
 	},
 	current: async () => {
+		// @ts-expect-error -- dynamic imports resolved at runtime
 		const module = await import('../../../../..');
 
 		const createChart: typeof module.createChart = (container: string | HTMLElement, options?: Parameters<typeof module.createChart>[1]) => {

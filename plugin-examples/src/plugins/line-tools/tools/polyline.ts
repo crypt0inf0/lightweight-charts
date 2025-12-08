@@ -138,6 +138,7 @@ export interface PolylineOptions {
     width: number;
     opacity: number;
     useSmoothCurve?: boolean; // If false, uses straight lines; if true or undefined, uses Bezier curves
+    locked?: boolean;
 }
 
 // Preset configurations for different variants
@@ -167,6 +168,7 @@ const defaultOptions: PolylineOptions = {
     width: 2,
     opacity: 1.0,
     useSmoothCurve: true,
+    locked: false,
 };
 
 /**
@@ -181,6 +183,7 @@ export class Polyline implements ISeriesPrimitive<Time> {
     _options: PolylineOptions;
 
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,

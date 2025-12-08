@@ -93,12 +93,14 @@ export interface TextOptions {
     color: string;
     fontSize: number;
     fontFamily: string;
+    locked?: boolean;
 }
 
 const defaultOptions: TextOptions = {
     color: 'rgb(0, 0, 0)',
     fontSize: 14,
     fontFamily: 'Arial',
+    locked: false,
 };
 
 export class Text implements ISeriesPrimitive<Time> {
@@ -109,6 +111,8 @@ export class Text implements ISeriesPrimitive<Time> {
     private readonly _paneViews: TextPaneView[];
     readonly _options: TextOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
+    _onTextEdit: ((newText: string) => void) | null = null;
 
     constructor(
         chart: IChartApi,
@@ -142,6 +146,22 @@ export class Text implements ISeriesPrimitive<Time> {
     public updateText(text: string): void {
         this._text = text;
         this.updateAllViews();
+    }
+
+    /**
+     * Set callback for text editing
+     */
+    public setOnTextEdit(callback: (newText: string) => void): void {
+        this._onTextEdit = callback;
+    }
+
+    /**
+     * Trigger text edit dialog
+     */
+    public editText(): void {
+        if (this._onTextEdit) {
+            this._onTextEdit(this._text);
+        }
     }
 
     /**

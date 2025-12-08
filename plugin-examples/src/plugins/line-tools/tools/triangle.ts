@@ -133,6 +133,7 @@ export interface TriangleOptions {
     backgroundColor: string;
     width: number;
     lineStyle: number;
+    locked?: boolean;
 }
 
 const defaultOptions: TriangleOptions = {
@@ -140,6 +141,7 @@ const defaultOptions: TriangleOptions = {
     backgroundColor: 'rgba(33, 150, 243, 0.2)',
     width: 1,
     lineStyle: 0,
+    locked: false,
 };
 
 export class Triangle implements ISeriesPrimitive<Time> {
@@ -151,6 +153,7 @@ export class Triangle implements ISeriesPrimitive<Time> {
     private readonly _paneViews: TrianglePaneView[];
     readonly _options: TriangleOptions;
     _selected: boolean = false;
+    _locked: boolean = false;
 
     constructor(
         chart: IChartApi,
