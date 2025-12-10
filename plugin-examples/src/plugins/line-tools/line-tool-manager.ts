@@ -71,7 +71,7 @@ export class LineToolManager extends PluginBase {
     // Path tool double-click detection
     private _lastClickTime: number = 0;
     private _lastClickPoint: { x: number, y: number } | null = null;
-    
+
     // Context menu handler reference (ML-8)
     private _contextMenuHandler: ((e: MouseEvent) => void) | null = null;
 
@@ -84,13 +84,19 @@ export class LineToolManager extends PluginBase {
     // Undo/Redo history manager
     private _historyManager: HistoryManager = new HistoryManager();
     private _dragPrevState: ToolState | null = null;  // State before drag starts
-    
+
     // Alert subscription tracking (ML-1)
     private _alertSubscription: any = null;
-    
+
     // Double-click detection for text editing
     private _lastClickedTool: any = null;
     private _lastToolClickTime: number = 0;
+
+    // Hide all drawings state
+    private _drawingsHidden: boolean = false;
+
+    // Lock all drawings state
+    private _allDrawingsLocked: boolean = false;
 
     private _setNoneButtonActive(): void {
         document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
@@ -216,11 +222,12 @@ export class LineToolManager extends PluginBase {
     }
 
     public detached(): void {
-        this.chart.unsubscribeClick(this._clickHandler);
-        this.chart.unsubscribeCrosshairMove(this._moveHandler);
-
+        // Remove window listeners first to ensure cleanup even if later steps throw (ML-10)
         window.removeEventListener('mousemove', this._rawMouseMoveHandler);
         window.removeEventListener('keydown', this._keyDownHandler);
+
+        this.chart.unsubscribeClick(this._clickHandler);
+        this.chart.unsubscribeCrosshairMove(this._moveHandler);
 
         const chartElement = (this.chart as any).chartElement?.();
         if (chartElement) {
@@ -307,7 +314,7 @@ export class LineToolManager extends PluginBase {
             this._dragPrevState = null;
             this.chart.applyOptions({ handleScroll: true, handleScale: true });
         }
-        
+
         this._deselectCurrentTool();
         this._activeToolType = toolType;
         this._points = [];
@@ -340,6 +347,122 @@ export class LineToolManager extends PluginBase {
         });
         this._tools = [];
         this._toolbar?.hide();
+        this._drawingsHidden = false;
+    }
+
+    /**
+     * Hide all drawings by detaching them from the series
+     * Tools remain in memory and can be shown again
+     */
+    public hideAllDrawings(): void {
+        if (this._drawingsHidden) return;
+
+        this._deselectCurrentTool();
+        this._toolbar?.hide();
+
+        this._tools.forEach(tool => {
+            try {
+                this.series.detachPrimitive(tool);
+            } catch (error) {
+                // Tool may already be detached
+            }
+        });
+
+        this._drawingsHidden = true;
+        this.requestUpdate();
+    }
+
+    /**
+     * Show all previously hidden drawings by reattaching them to the series
+     */
+    public showAllDrawings(): void {
+        if (!this._drawingsHidden) return;
+
+        this._tools.forEach(tool => {
+            try {
+                this.series.attachPrimitive(tool);
+            } catch (error) {
+                // Tool may already be attached
+            }
+        });
+
+        this._drawingsHidden = false;
+        this.requestUpdate();
+    }
+
+    /**
+     * Toggle visibility of all drawings
+     * @returns true if drawings are now hidden, false if shown
+     */
+    public toggleDrawingsVisibility(): boolean {
+        if (this._drawingsHidden) {
+            this.showAllDrawings();
+        } else {
+            this.hideAllDrawings();
+        }
+        return this._drawingsHidden;
+    }
+
+    /**
+     * Check if drawings are currently hidden
+     */
+    public areDrawingsHidden(): boolean {
+        return this._drawingsHidden;
+    }
+
+    /**
+     * Lock all drawings to prevent dragging/moving
+     */
+    public lockAllDrawings(): void {
+        if (this._allDrawingsLocked) return;
+
+        // Deselect any currently selected tool
+        this._deselectCurrentTool();
+        this._toolbar?.hide();
+
+        // Set lock flag on all tools
+        this._tools.forEach(tool => {
+            if (tool._locked !== undefined) {
+                tool._locked = true;
+            }
+        });
+
+        this._allDrawingsLocked = true;
+    }
+
+    /**
+     * Unlock all drawings to allow dragging/moving
+     */
+    public unlockAllDrawings(): void {
+        if (!this._allDrawingsLocked) return;
+
+        this._tools.forEach(tool => {
+            if (tool._locked !== undefined) {
+                tool._locked = false;
+            }
+        });
+
+        this._allDrawingsLocked = false;
+    }
+
+    /**
+     * Toggle lock state for all drawings
+     * @returns true if drawings are now locked, false if unlocked
+     */
+    public toggleDrawingsLock(): boolean {
+        if (this._allDrawingsLocked) {
+            this.unlockAllDrawings();
+        } else {
+            this.lockAllDrawings();
+        }
+        return this._allDrawingsLocked;
+    }
+
+    /**
+     * Check if all drawings are currently locked
+     */
+    public areDrawingsLocked(): boolean {
+        return this._allDrawingsLocked;
     }
 
     public updateToolOptions(toolType: ToolType, options: any) {
@@ -393,6 +516,15 @@ export class LineToolManager extends PluginBase {
         }
     }
 
+    public disableSessionHighlighting(): void {
+        const existingIndex = this._tools.findIndex(t => t instanceof SessionHighlighting);
+        if (existingIndex !== -1) {
+            const existingTool = this._tools[existingIndex];
+            this.series.detachPrimitive(existingTool);
+            this._tools.splice(existingIndex, 1);
+        }
+    }
+
     public getChartRect(): DOMRect | null {
         const chartElement = (this.chart as any).chartElement?.();
         return chartElement?.getBoundingClientRect() || null;
@@ -408,7 +540,7 @@ export class LineToolManager extends PluginBase {
     private _selectTool(tool: any): void {
         // Null check (B-3)
         if (!tool) return;
-        
+
         // Deselect previous tool
         if (this._selectedTool && this._selectedTool !== tool) {
             this._selectedTool.setSelected(false);
@@ -436,6 +568,13 @@ export class LineToolManager extends PluginBase {
     }
 
     /**
+     * Public method to deselect the current tool (called from toolbar ESC button)
+     */
+    public deselectTool(): void {
+        this._deselectCurrentTool();
+    }
+
+    /**
      * Show inline text editor for editing text/callout tools
      */
     private _showTextInputDialog(tool: Text | Callout, clickPoint?: { x: number; y: number }): void {
@@ -447,7 +586,7 @@ export class LineToolManager extends PluginBase {
             if (!rect) return;
 
             let editorPosition: { x: number; y: number };
-            
+
             if (clickPoint) {
                 // Position at click point
                 editorPosition = {
@@ -458,7 +597,7 @@ export class LineToolManager extends PluginBase {
                 // Calculate position from tool coordinates
                 const timeScale = this.chart.timeScale();
                 const series = this.series;
-                
+
                 if (tool instanceof Text) {
                     const x = timeScale.logicalToCoordinate(tool._point.logical as Logical);
                     const y = series.priceToCoordinate(tool._point.price);
@@ -485,7 +624,7 @@ export class LineToolManager extends PluginBase {
                     return;
                 }
             }
-            
+
             // Show inline editor
             this._textInputDialog.show(
                 currentText,
@@ -498,7 +637,7 @@ export class LineToolManager extends PluginBase {
                 }
             );
         });
-        
+
         // Trigger the edit immediately
         tool.editText();
     }
@@ -708,16 +847,7 @@ export class LineToolManager extends PluginBase {
                 p.price += deltaPrice;
             });
             tool.updateAllViews();
-        } else if (tool._p1 && tool._p2 && tool._p3 && (tool instanceof LongPosition || tool instanceof ShortPosition)) {
-            // LongPosition/ShortPosition also has 3 points but handled differently in updatePointByIndex,
-            // but for moving the whole shape, we move all 3 points.
-            tool._p1.logical += deltaLogical;
-            tool._p1.price += deltaPrice;
-            tool._p2.logical += deltaLogical;
-            tool._p2.price += deltaPrice;
-            tool._p3.logical += deltaLogical;
-            tool._p3.price += deltaPrice;
-            tool.updateAllViews();
+            // NOTE: LongPosition/ShortPosition are now handled by the 3-point block above (B-9)
         } else if (tool._point) {
             // Single-point tools (Text)
             tool._point = {
@@ -816,12 +946,8 @@ export class LineToolManager extends PluginBase {
         const logical = timeScale.coordinateToLogical(param.point.x);
         if (logical === null) return;
 
-        // For tools that need LogicalPoints, use them directly instead of converting twice
-        let pointToPush: LogicalPoint = { logical, price };
-        if (this._activeToolType === 'Triangle' || this._activeToolType === 'TrendLine' || this._activeToolType === 'VerticalLine' || this._activeToolType === 'Rectangle' || this._activeToolType === 'Circle' || this._activeToolType === 'ParallelChannel' || this._activeToolType === 'FibRetracement' || this._activeToolType === 'Arrow' || this._activeToolType === 'Ray' || this._activeToolType === 'ExtendedLine' || this._activeToolType === 'HorizontalRay' || this._activeToolType === 'PriceRange' || this._activeToolType === 'LongPosition' || this._activeToolType === 'ShortPosition' || this._activeToolType === 'ElliottImpulseWave' || this._activeToolType === 'ElliottCorrectionWave' || this._activeToolType === 'DateRange' || this._activeToolType === 'FibExtension' || this._activeToolType === 'UserPriceAlerts' || this._activeToolType === 'PriceLabel') {
-            // Already have the logical point, use it directly
-            pointToPush = { logical, price };
-        }
+        // All tools use LogicalPoints (B-10: removed redundant type check)
+        const pointToPush: LogicalPoint = { logical, price };
 
         this._points.push(pointToPush);
 
@@ -919,7 +1045,7 @@ export class LineToolManager extends PluginBase {
             this._points = [];
             this.chart.timeScale().applyOptions({});
             this._selectTool(tool);
-            
+
             // Show inline text editor immediately after creating
             this._showTextInputDialog(tool, param.point);
         } else if (this._activeToolType === 'Callout') {
@@ -939,7 +1065,7 @@ export class LineToolManager extends PluginBase {
                     this._activeTool = null;
                     this._points = [];
                     this._selectTool(finishedTool);
-                    
+
                     // Show inline text editor at the text box position
                     this._showTextInputDialog(finishedTool, param.point);
                 }
@@ -1613,10 +1739,10 @@ export class LineToolManager extends PluginBase {
                 if (hitResult?.hit) {
                     // Check for double-click on Text or Callout tools
                     const now = Date.now();
-                    const isDoubleClick = 
-                        this._lastClickedTool === this._selectedTool && 
+                    const isDoubleClick =
+                        this._lastClickedTool === this._selectedTool &&
                         (now - this._lastToolClickTime) < 300;
-                    
+
                     if (isDoubleClick && (this._selectedTool instanceof Text || this._selectedTool instanceof Callout)) {
                         // Double-click detected - open text editor instead of dragging
                         event.preventDefault();
@@ -1625,7 +1751,7 @@ export class LineToolManager extends PluginBase {
                         this._lastToolClickTime = 0;
                         return;
                     }
-                    
+
                     // Single click - start drag
                     this._lastClickedTool = this._selectedTool;
                     this._lastToolClickTime = now;
@@ -1818,7 +1944,7 @@ export class LineToolManager extends PluginBase {
         if (this._isDragging) {
             return;
         }
-        
+
         const action = this._historyManager.popUndo();
         if (!action) return;
 
@@ -1859,7 +1985,7 @@ export class LineToolManager extends PluginBase {
         if (this._isDragging) {
             return;
         }
-        
+
         const action = this._historyManager.popRedo();
         if (!action) return;
 

@@ -7,6 +7,11 @@ export interface UserAlertInfo {
 	condition?: AlertCondition;
 	type?: 'price' | 'tool';
 	toolRef?: LineTool;
+	/** Tracks where the close price was relative to the alert when created ('above', 'below', or 'unknown').
+	 * This is used to prevent immediate triggers when placing alerts within the current candle's range.
+	 * Once a true crossing happens, this is set to 'unknown' to enable further triggers.
+	 */
+	initialPricePosition?: 'above' | 'below' | 'unknown';
 }
 
 export class UserAlertsState {

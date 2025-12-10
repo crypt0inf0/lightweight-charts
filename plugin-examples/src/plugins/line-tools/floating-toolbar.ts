@@ -68,24 +68,24 @@ export class FloatingToolbar {
         }
         this._closeAllDropdowns();
     }
-    
+
     public destroy(): void {
         this.hide();
         this._closeAllDropdowns();
-        
+
         // Clean up all active dropdown handlers (ML-6)
         this._activeDropdownHandlers.forEach(handler => {
             document.removeEventListener('click', handler);
         });
         this._activeDropdownHandlers.clear();
-        
+
         // Clean up any active drag handlers (ML-7)
         if (this._activeDragHandlers) {
             document.removeEventListener('mousemove', this._activeDragHandlers.move);
             document.removeEventListener('mouseup', this._activeDragHandlers.up);
             this._activeDragHandlers = null;
         }
-        
+
         if (this._container && this._container.parentNode) {
             this._container.parentNode.removeChild(this._container);
         }
@@ -97,13 +97,13 @@ export class FloatingToolbar {
         // Prevent race conditions (RC-3)
         if (this._positionPending) return;
         this._positionPending = true;
-        
+
         requestAnimationFrame(() => {
             if (!this._container) {
                 this._positionPending = false;
                 return;
             }
-            
+
             if (this._savedPosition) {
                 this._show(this._savedPosition.x, this._savedPosition.y);
             } else if (this._container && this._manager) {
@@ -126,7 +126,7 @@ export class FloatingToolbar {
                 // If container or manager is null, just set pending to false
                 this._positionPending = false;
             }
-            
+
             this._positionPending = false;
         });
     }
@@ -165,12 +165,12 @@ export class FloatingToolbar {
 
     private _renderCollapsed(toolType: string) {
         if (!this._container) return;
-        
+
         // Only recreate if tool type changed (B-7)
         if (this._currentToolType === toolType && this._container.children.length > 0) {
             return;
         }
-        
+
         this._currentToolType = toolType;
         this._container.innerHTML = '';
         this._container.dataset.tool = toolType;
@@ -189,7 +189,7 @@ export class FloatingToolbar {
 
     private _renderExpanded(tool: any) {
         if (!this._container || !this._manager) return;
-        
+
         this._container.innerHTML = '';
 
         // 1. Drag Handle
@@ -203,7 +203,9 @@ export class FloatingToolbar {
         this._container.appendChild(templateWrapper);
 
         const options = tool._options || {};
-        const isTextTool = tool.constructor.name === 'Text' || tool.constructor.name === 'Callout';
+        // Use toolType property instead of constructor.name to avoid minification issues
+        const toolType = (tool as any).toolType || tool.constructor.name;
+        const isTextTool = toolType === 'Text' || toolType === 'Callout';
 
         // 3. Line Color (Pencil) - Skip for Text/Callout tools
         if (!isTextTool) {
@@ -425,7 +427,7 @@ export class FloatingToolbar {
             document.removeEventListener('click', closeHandler);
             this._activeDropdownHandlers.delete(closeHandler);
         };
-        
+
         this._activeDropdownHandlers.add(closeHandler);
         requestAnimationFrame(() => {
             if (!this._activeDropdownHandlers.has(closeHandler)) return; // Component destroyed
@@ -668,7 +670,7 @@ export class FloatingToolbar {
                 document.removeEventListener('mousemove', this._activeDragHandlers.move);
                 document.removeEventListener('mouseup', this._activeDragHandlers.up);
             }
-            
+
             updateOpacity(e.clientX);
             const move = (e: MouseEvent) => updateOpacity(e.clientX);
             const up = () => {
@@ -676,7 +678,7 @@ export class FloatingToolbar {
                 document.removeEventListener('mouseup', up);
                 this._activeDragHandlers = null;
             };
-            
+
             this._activeDragHandlers = { move, up };
             document.addEventListener('mousemove', move);
             document.addEventListener('mouseup', up);
@@ -785,7 +787,13 @@ export class FloatingToolbar {
 
     private _startDrag(e: MouseEvent) {
         if (!this._container || !this._manager) return;
-        
+
+        // Clean up any existing drag handlers first (ML-9)
+        if (this._activeDragHandlers) {
+            document.removeEventListener('mousemove', this._activeDragHandlers.move);
+            document.removeEventListener('mouseup', this._activeDragHandlers.up);
+        }
+
         e.preventDefault();
         const startX = e.clientX;
         const startY = e.clientY;
@@ -797,9 +805,10 @@ export class FloatingToolbar {
             if (!this._container || !this._manager) {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
+                this._activeDragHandlers = null;
                 return;
             }
-            
+
             const deltaX = e.clientX - startX;
             const deltaY = e.clientY - startY;
             let newLeft = startLeft + deltaX;
@@ -829,12 +838,15 @@ export class FloatingToolbar {
         const onMouseUp = () => {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
+            this._activeDragHandlers = null;
             if (this._container) {
                 const rect = this._container.getBoundingClientRect();
                 this._savedPosition = { x: rect.left, y: rect.top };
             }
         };
 
+        // Track handlers for cleanup (ML-9)
+        this._activeDragHandlers = { move: onMouseMove, up: onMouseUp };
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     }

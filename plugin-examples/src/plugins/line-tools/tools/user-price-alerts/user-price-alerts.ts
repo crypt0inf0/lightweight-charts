@@ -350,7 +350,42 @@ export class UserPriceAlerts
 					// @ts-ignore
 					const logical = timeScale.coordinateToLogical(timeScale.timeToCoordinate(bar.time) || 0);
 					if (logical !== null) {
-						triggered = LineToolAlertManager.checkAlert(alert.toolRef, bar, logical, condition);
+						// Get the line price at current logical index for position tracking
+						const linePrice = LineToolAlertManager.getPriceAtLogical(alert.toolRef, logical);
+
+						if (linePrice !== null) {
+							// Determine current price position relative to line tool
+							const currentPosition: 'above' | 'below' | 'at' = close > linePrice ? 'above' : (close < linePrice ? 'below' : 'at');
+
+							// If initialPricePosition is not set, initialize it and skip triggering this candle
+							if (!alert.initialPricePosition || alert.initialPricePosition === 'unknown') {
+								alert.initialPricePosition = currentPosition === 'at' ? 'unknown' : currentPosition;
+								continue; // Skip triggering on the first check
+							}
+
+							// Check if the line price is within the candle's range
+							const isTouching = linePrice >= low && linePrice <= high;
+
+							// For a true crossing, price must have moved from one side to the other
+							const hasCrossedFromAbove = alert.initialPricePosition === 'above' && close <= linePrice;
+							const hasCrossedFromBelow = alert.initialPricePosition === 'below' && close >= linePrice;
+
+							if (condition === 'crossing') {
+								triggered = isTouching && (hasCrossedFromAbove || hasCrossedFromBelow);
+							} else if (condition === 'crossing_up') {
+								triggered = isTouching && hasCrossedFromBelow && close >= linePrice;
+							} else if (condition === 'crossing_down') {
+								triggered = isTouching && hasCrossedFromAbove && close <= linePrice;
+							}
+
+							// Update position for future checks
+							if (!isTouching && currentPosition !== 'at') {
+								alert.initialPricePosition = currentPosition;
+							}
+						} else {
+							// Fallback to original checkAlert for tools without line price (VerticalLine, Rectangle, ParallelChannel)
+							triggered = LineToolAlertManager.checkAlert(alert.toolRef, bar, logical, condition);
+						}
 					}
 				}
 			} else {
@@ -358,12 +393,36 @@ export class UserPriceAlerts
 				// Check if the alert price is within the candle's range
 				const isCrossing = alert.price >= low && alert.price <= high;
 
+				// Determine current price position relative to alert
+				const currentPosition: 'above' | 'below' | 'at' = close > alert.price ? 'above' : (close < alert.price ? 'below' : 'at');
+
+				// If initialPricePosition is not set, initialize it and skip triggering this candle
+				// This prevents immediate triggers when placing alerts within the current candle's range
+				if (!alert.initialPricePosition || alert.initialPricePosition === 'unknown') {
+					// Set initial position based on close price
+					alert.initialPricePosition = currentPosition === 'at' ? 'unknown' : currentPosition;
+					continue; // Skip triggering on the first check
+				}
+
+				// For a true crossing, price must have moved from one side to the other
+				const hasCrossedFromAbove = alert.initialPricePosition === 'above' && close <= alert.price;
+				const hasCrossedFromBelow = alert.initialPricePosition === 'below' && close >= alert.price;
+
 				if (condition === 'crossing') {
-					triggered = isCrossing;
+					// Trigger if price has crossed from either direction
+					triggered = isCrossing && (hasCrossedFromAbove || hasCrossedFromBelow);
 				} else if (condition === 'crossing_up') {
-					triggered = isCrossing && close >= alert.price;
+					// Trigger only if crossing from below
+					triggered = isCrossing && hasCrossedFromBelow && close >= alert.price;
 				} else if (condition === 'crossing_down') {
-					triggered = isCrossing && close <= alert.price;
+					// Trigger only if crossing from above
+					triggered = isCrossing && hasCrossedFromAbove && close <= alert.price;
+				}
+
+				// Update the position for future checks (if price moved significantly away)
+				if (!isCrossing && currentPosition !== 'at') {
+					// Price has moved away from the alert line, update position
+					alert.initialPricePosition = currentPosition;
 				}
 			}
 

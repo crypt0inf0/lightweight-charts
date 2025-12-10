@@ -1,6 +1,7 @@
 import { CandlestickSeries, ColorType, createChart } from 'lightweight-charts';
 import { generateCandleData } from '../../../sample-data';
 import { LineToolManager } from '../line-tool-manager';
+import { PriceScaleTimer } from '../tools/price-scale-timer';
 
 const chart = createChart(document.getElementById('container') as HTMLElement, {
     layout: {
@@ -16,8 +17,26 @@ const series = chart.addSeries(CandlestickSeries);
 const data = generateCandleData();
 series.setData(data);
 
+// Extend price scale width to accommodate timer label
+series.priceScale().applyOptions({
+    minimumWidth: 80, // Wider to fit price + timer
+});
+
+// Note: When timer is shown, we hide the native price label
+// Since timer starts hidden (visible: false), native label should be visible initially
+series.applyOptions({
+    lastValueVisible: true, // Keep native visible since timer starts hidden
+});
+
 const manager = new LineToolManager();
 series.attachPrimitive(manager);
+
+// Price Scale Timer - shows countdown to next candle close
+const priceScaleTimer = new PriceScaleTimer({
+    timeframeSeconds: 60, // 1 minute default, change as needed
+    visible: false, // Start hidden, toggle with button
+});
+series.attachPrimitive(priceScaleTimer);
 
 const btnNone = document.getElementById('btn-none') as HTMLButtonElement;
 const btnTrendLine = document.getElementById('btn-trend-line') as HTMLButtonElement;
@@ -171,18 +190,29 @@ btnTriangle.addEventListener('click', () => {
     setActiveButton(btnTriangle);
 });
 
+// Session Breaks toggle button
 const btnSession = document.getElementById('btn-session') as HTMLButtonElement;
+let sessionEnabled = false;
 if (btnSession) {
     btnSession.addEventListener('click', () => {
-        const sessionHighlighter = (time: any) => {
-            const date = new Date(time * 1000);
-            const dayOfWeek = date.getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                return 'rgba(255, 152, 1, 0.08)';
-            }
-            return 'rgba(41, 98, 255, 0.08)';
-        };
-        manager.enableSessionHighlighting(sessionHighlighter);
+        sessionEnabled = !sessionEnabled;
+        if (sessionEnabled) {
+            const sessionHighlighter = (time: any) => {
+                const date = new Date(time * 1000);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    return 'rgba(255, 152, 1, 0.08)';
+                }
+                return 'rgba(41, 98, 255, 0.08)';
+            };
+            manager.enableSessionHighlighting(sessionHighlighter);
+            btnSession.textContent = 'Hide Sessions';
+            btnSession.classList.add('session-active');
+        } else {
+            manager.disableSessionHighlighting();
+            btnSession.textContent = 'Session Breaks';
+            btnSession.classList.remove('session-active');
+        }
     });
 }
 
@@ -237,4 +267,68 @@ btnEraser.addEventListener('click', () => {
 
 btnClear.addEventListener('click', () => {
     manager.clearTools();
+    // Reset hide button state when clearing
+    const hideToggle = document.getElementById('btn-hide-toggle') as HTMLButtonElement;
+    if (hideToggle) {
+        hideToggle.textContent = 'Hide All';
+        hideToggle.classList.remove('hidden-state');
+    }
+    // Reset lock button state when clearing
+    const lockToggle = document.getElementById('btn-lock-toggle') as HTMLButtonElement;
+    if (lockToggle) {
+        lockToggle.textContent = 'Lock All';
+        lockToggle.classList.remove('locked-state');
+    }
 });
+
+// Hide/Show toggle button
+const btnHideToggle = document.getElementById('btn-hide-toggle') as HTMLButtonElement;
+if (btnHideToggle) {
+    btnHideToggle.addEventListener('click', () => {
+        const isHidden = manager.toggleDrawingsVisibility();
+        if (isHidden) {
+            btnHideToggle.textContent = 'Show All';
+            btnHideToggle.classList.add('hidden-state');
+        } else {
+            btnHideToggle.textContent = 'Hide All';
+            btnHideToggle.classList.remove('hidden-state');
+        }
+    });
+}
+
+// Lock/Unlock toggle button
+const btnLockToggle = document.getElementById('btn-lock-toggle') as HTMLButtonElement;
+if (btnLockToggle) {
+    btnLockToggle.addEventListener('click', () => {
+        const isLocked = manager.toggleDrawingsLock();
+        if (isLocked) {
+            btnLockToggle.textContent = 'Unlock All';
+            btnLockToggle.classList.add('locked-state');
+        } else {
+            btnLockToggle.textContent = 'Lock All';
+            btnLockToggle.classList.remove('locked-state');
+        }
+    });
+}
+
+// Timer toggle button
+const btnTimerToggle = document.getElementById('btn-timer-toggle') as HTMLButtonElement;
+if (btnTimerToggle) {
+    btnTimerToggle.addEventListener('click', () => {
+        const isVisible = priceScaleTimer.isVisible();
+        priceScaleTimer.setVisible(!isVisible);
+
+        // Toggle native price label: hide when our timer is shown, show when hidden
+        series.applyOptions({
+            lastValueVisible: isVisible, // Show native when our timer is hidden
+        });
+
+        if (!isVisible) {
+            btnTimerToggle.textContent = 'Hide Timer';
+            btnTimerToggle.classList.add('timer-active');
+        } else {
+            btnTimerToggle.textContent = 'Show Timer';
+            btnTimerToggle.classList.remove('timer-active');
+        }
+    });
+}

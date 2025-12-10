@@ -95,6 +95,94 @@
             color: white;
         }
 
+        .tool-btn.hide-btn {
+            background: #7c4dff;
+            color: white;
+            border-color: #7c4dff;
+        }
+
+        .tool-btn.hide-btn:hover {
+            background: #651fff;
+            border-color: #651fff;
+            color: white;
+        }
+
+        .tool-btn.hide-btn.hidden-state {
+            background: #00c853;
+            border-color: #00c853;
+        }
+
+        .tool-btn.hide-btn.hidden-state:hover {
+            background: #00a844;
+            border-color: #00a844;
+        }
+
+        .tool-btn.lock-btn {
+            background: #ff9800;
+            color: white;
+            border-color: #ff9800;
+        }
+
+        .tool-btn.lock-btn:hover {
+            background: #f57c00;
+            border-color: #f57c00;
+            color: white;
+        }
+
+        .tool-btn.lock-btn.locked-state {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .tool-btn.lock-btn.locked-state:hover {
+            background: #43a047;
+            border-color: #43a047;
+        }
+
+        .tool-btn.timer-btn {
+            background: #00bcd4;
+            color: white;
+            border-color: #00bcd4;
+        }
+
+        .tool-btn.timer-btn:hover {
+            background: #00acc1;
+            border-color: #00acc1;
+            color: white;
+        }
+
+        .tool-btn.timer-btn.timer-active {
+            background: #009688;
+            border-color: #009688;
+        }
+
+        .tool-btn.timer-btn.timer-active:hover {
+            background: #00897b;
+            border-color: #00897b;
+        }
+
+        .tool-btn.session-btn {
+            background: #ff9800;
+            color: white;
+            border-color: #ff9800;
+        }
+
+        .tool-btn.session-btn:hover {
+            background: #f57c00;
+            border-color: #f57c00;
+            color: white;
+        }
+
+        .tool-btn.session-btn.session-active {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .tool-btn.session-btn.session-active:hover {
+            background: #43a047;
+            border-color: #43a047;
+        }
+
         .chart-area {
             flex: 1;
             padding: 16px;
@@ -148,7 +236,6 @@
             <button id="btn-date-price-range" class="tool-btn">Date and Price Range</button>
             <button id="btn-measure" class="tool-btn">Measure</button>
             <button id="btn-head-and-shoulders" class="tool-btn">Head & Shoulders</button>
-            <button id="btn-session" class="tool-btn">Session Highlighting</button>
 
             <div class="divider"></div>
 
@@ -164,6 +251,10 @@
             <button id="btn-price-label" class="tool-btn">Price Label</button>
 
             <button id="btn-eraser" class="tool-btn">Eraser</button>
+            <button id="btn-hide-toggle" class="tool-btn hide-btn">Hide All</button>
+            <button id="btn-lock-toggle" class="tool-btn lock-btn">Lock All</button>
+            <button id="btn-timer-toggle" class="tool-btn timer-btn">Show Timer</button>
+            <button id="btn-session" class="tool-btn session-btn">Session Breaks</button>
             <button id="btn-clear" class="tool-btn clear-btn">Clear All</button>
         </div>
 
